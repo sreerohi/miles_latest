@@ -1,3 +1,5 @@
+import torch
+
 from tests.ci.ci_register import register_cuda_ci
 from tests.ci.metric_history import register_ci_gate
 from tests.e2e.sglang.test_session_server_multi_role._common import ModelConfig, run_both_versions
@@ -5,6 +7,15 @@ from tests.e2e.sglang.test_session_server_multi_role._common import ModelConfig,
 register_cuda_ci(est_time=600, suite="stage-c-2-gpu-h200", labels=["sglang"])
 register_ci_gate(metric_key="rollout/tito_session_mismatch_rate/v1/assistant_text")
 register_ci_gate(metric_key="rollout/tito_session_mismatch_rate/v2/assistant_text")
+
+
+# ROCm: bypass two SGLang/aiter paths that crash on MI350 for GLM-4.7-Flash
+# (MLA + MoE). Refs sgl-project/sglang#19824, #20691 and miles PR #1126.
+_ROCM_ENV = (
+    {"SGLANG_ROCM_FUSED_DECODE_MLA": "0", "SGLANG_USE_AITER": "0"}
+    if torch.version.hip is not None
+    else {}
+)
 
 
 CONFIG = ModelConfig(
@@ -19,6 +30,8 @@ CONFIG = ModelConfig(
     # preceding assistant carries a matching tool_call.id, so the APPEND_TOOL
     # sentinel ("tool_call_id": "none") roundtrips cleanly.
     tool_call_failure_mode="append_tool",
+    assistant_text_threshold=0.4,
+    extra_env=_ROCM_ENV,
 )
 
 
