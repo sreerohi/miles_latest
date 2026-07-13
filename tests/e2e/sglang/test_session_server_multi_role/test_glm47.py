@@ -13,7 +13,7 @@ register_ci_gate(metric_key="rollout/tito_session_mismatch_rate/v2/assistant_tex
 # (MLA + MoE). Refs sgl-project/sglang#19824, #20691 and miles PR #1126.
 _ROCM_ENV = (
     {"SGLANG_ROCM_FUSED_DECODE_MLA": "0", "SGLANG_USE_AITER": "0"}
-    if torch.version.hip is not None
+    if getattr(torch.version, "hip", None) is not None
     else {}
 )
 
