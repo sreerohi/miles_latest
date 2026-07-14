@@ -1,7 +1,6 @@
-import torch
-
 from tests.ci.ci_register import register_cuda_ci
 from tests.ci.metric_history import register_ci_gate
+from tests.ci.rocm_utils import IS_ROCM
 from tests.e2e.sglang.test_session_server_multi_role._common import ModelConfig, run_both_versions
 
 register_cuda_ci(est_time=600, suite="stage-c-2-gpu-h200", labels=["sglang"])
@@ -11,11 +10,7 @@ register_ci_gate(metric_key="rollout/tito_session_mismatch_rate/v2/assistant_tex
 
 # ROCm: bypass two SGLang/aiter paths that crash on MI350 for GLM-4.7-Flash
 # (MLA + MoE). Refs sgl-project/sglang#19824, #20691 and miles PR #1126.
-_ROCM_ENV = (
-    {"SGLANG_ROCM_FUSED_DECODE_MLA": "0", "SGLANG_USE_AITER": "0"}
-    if getattr(torch.version, "hip", None) is not None
-    else {}
-)
+_ROCM_ENV = {"SGLANG_ROCM_FUSED_DECODE_MLA": "0", "SGLANG_USE_AITER": "0"} if IS_ROCM else {}
 
 
 CONFIG = ModelConfig(
