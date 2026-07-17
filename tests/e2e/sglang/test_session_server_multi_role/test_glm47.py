@@ -1,3 +1,5 @@
+import os
+
 from tests.ci.ci_register import register_cuda_ci
 from tests.ci.metric_history import register_ci_gate
 from tests.ci.rocm_utils import IS_ROCM
@@ -8,7 +10,9 @@ register_ci_gate(metric_key="rollout/tito_session_mismatch_rate/v1/assistant_tex
 register_ci_gate(metric_key="rollout/tito_session_mismatch_rate/v2/assistant_text")
 
 
-_ROCM_ENV = {"SGLANG_ROCM_FUSED_DECODE_MLA": "0", "SGLANG_USE_AITER": "0"} if IS_ROCM else {}
+if IS_ROCM:
+    os.environ["SGLANG_ROCM_FUSED_DECODE_MLA"] = "0"
+    os.environ["SGLANG_USE_AITER"] = "0"
 
 
 CONFIG = ModelConfig(
@@ -24,7 +28,6 @@ CONFIG = ModelConfig(
     # sentinel ("tool_call_id": "none") roundtrips cleanly.
     tool_call_failure_mode="append_tool",
     assistant_text_threshold=0.4,
-    extra_env=_ROCM_ENV,
 )
 
 

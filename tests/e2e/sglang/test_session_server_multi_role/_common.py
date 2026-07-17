@@ -46,10 +46,6 @@ class ModelConfig:
     # tool_calls.  Default "rollback" is universal (pop assistant + retry);
     # see ToolCallFailureMode for "append_tool" / "append_user" variants.
     tool_call_failure_mode: str = "rollback"
-    # Per-test env overrides forwarded into the Ray runtime-env-json. Use for
-    # test-specific SGLang/aiter knobs that should NOT apply to other tests in
-    # this directory.
-    extra_env: dict[str, str] = field(default_factory=dict)
 
 
 def run_one(
@@ -81,7 +77,6 @@ def run_one(
         session_verify_cycles=cfg.cycles,
         tool_call_failure_mode=cfg.tool_call_failure_mode,
         assistant_text_threshold=cfg.assistant_text_threshold,
-        extra_env=cfg.extra_env,
         **invariants,
     )
     run_session_verify(args=args)
