@@ -43,8 +43,6 @@ jobs:
         -v /data/miles_ci/datasets:/root/datasets
         -v /data/miles_ci/hf_cache:/root/.cache/huggingface
         -v /tmp/miles-ray:/tmp/ray
-        -v /tmp/aiter_configs:/tmp/aiter_configs
-        -v /tmp/aiter_jit_build:/sgl-workspace/aiter/aiter/jit/build
     defaults:
       run:
         working-directory: ${{ github.workspace }}
@@ -64,19 +62,10 @@ jobs:
           echo "hostname    : $(hostname)"
           echo "runner name : ${{ runner.name }}"
 
-      - name: Clear stale aiter JIT locks inside container
+      - name: Ensure host cache dirs exist and clear stale Ray sessions
         shell: bash
         run: |
-          find /tmp/aiter_configs /sgl-workspace/aiter/aiter/jit/build \
-            -name "*.lock" -delete 2>/dev/null || true
-          echo "Cleared stale aiter JIT locks"
-
-      - name: Ensure host cache dirs exist and clear stale locks and Ray sessions
-        shell: bash
-        run: |
-          mkdir -p /tmp/miles-ray /tmp/aiter_configs /tmp/aiter_jit_build
-          find /tmp/aiter_configs /tmp/aiter_jit_build \
-            -name "*.lock" -delete 2>/dev/null || true
+          mkdir -p /tmp/miles-ray
           rm -rf /tmp/miles-ray/session_* /tmp/miles-ray/ray_current_cluster 2>/dev/null || true
 
       - name: Wait for ROCm GPUs
