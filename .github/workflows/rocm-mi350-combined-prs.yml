@@ -58,6 +58,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Print runner info
+        shell: bash
+        run: |
+          echo "machine matrix slot : ${{ matrix.machine }}"
+          echo "hostname            : $(hostname)"
+          echo "runner name         : ${{ runner.name }}"
+
       - name: Ensure host cache dirs exist and clear stale aiter JIT locks
         shell: bash
         run: |
