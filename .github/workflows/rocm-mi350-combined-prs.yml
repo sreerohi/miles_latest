@@ -129,7 +129,7 @@ jobs:
           if old not in src:
               print("WARN: target not found"); sys.exit(1)
           open(path, "w").write(src.replace(old, new, 1))
-          print("PATCHED filesystem_async.py")
+          print("PATCHED  filesystem_async.py")
           PY
 
       - name: Run ${{ matrix.test }}
