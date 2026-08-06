@@ -15,8 +15,9 @@ jobs:
     timeout-minutes: 150
     strategy:
       fail-fast: false
-      max-parallel: 1
+      max-parallel: 2
       matrix:
+        machine: [1, 2]
         test:
           - tests/e2e/sglang_config/test_sglang_config.py                    # est_time=400
           - tests/e2e/sglang_config/test_sglang_config_mixed_offload.py       # est_time=400
