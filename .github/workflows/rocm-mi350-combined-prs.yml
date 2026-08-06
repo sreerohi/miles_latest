@@ -63,12 +63,13 @@ jobs:
           echo "hostname    : $(hostname)"
           echo "runner name : ${{ runner.name }}"
 
-      - name: Ensure host cache dirs exist and clear stale aiter JIT locks
+      - name: Ensure host cache dirs exist and clear stale locks and Ray sessions
         shell: bash
         run: |
           mkdir -p /tmp/miles-ray /tmp/aiter_configs /tmp/aiter_jit_build
           find /tmp/aiter_configs /tmp/aiter_jit_build \
             -name "*.lock" -delete 2>/dev/null || true
+          rm -rf /tmp/miles-ray/session_* /tmp/miles-ray/ray_current_cluster 2>/dev/null || true
 
       - name: Wait for ROCm GPUs
         shell: bash
