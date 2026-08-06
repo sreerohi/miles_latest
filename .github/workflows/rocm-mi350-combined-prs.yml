@@ -1,4 +1,4 @@
-name: ROCm MI350 combined-prs
+name: ROCm MI350  combined-prs
 
 on:
   push:
