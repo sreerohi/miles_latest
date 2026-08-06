@@ -1,0 +1,134 @@
+name: ROCm MI350 combined-prs
+
+on:
+  push:
+    branches: [combined-prs]
+  workflow_dispatch:
+
+concurrency:
+  group: rocm-mi350-combined-prs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: [self-hosted, mi350, CI]
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        test:
+          - tests/e2e/ckpt/test_qwen3_4B_ckpt.py
+          - tests/e2e/long/test_qwen2.5_0.5B_gsm8k_async.py
+          - tests/e2e/megatron/test_mimo_7B_mtp_only_grad.py
+          - tests/e2e/megatron/test_glm47_flash/test_r3_mtp.py
+          - tests/e2e/sglang/test_session_server_multi_role/test_glm47.py
+          - tests/e2e/sglang_config/test_sglang_config_mixed_offload_ft.py
+          - tests/e2e/sglang_config/test_sglang_config_mixed_offload.py
+          - tests/e2e/sglang_config/test_sglang_config.py
+          - tests/e2e/short/test_qwen2.5_0.5B_gsm8k_short.py
+          - tests/e2e/short/test_qwen2.5_0.5B_gsm8k_async_short.py
+    container:
+      image: rocm/sgl-dev:miles-rocm720-mi35x-20260805
+      options: >-
+        --device /dev/kfd --device /dev/dri
+        --group-add 44 --group-add 109
+        --security-opt seccomp=unconfined
+        --ipc=host --shm-size=32g
+        --privileged
+        --ulimit memlock=-1 --ulimit stack=67108864
+        --env HIP_VISIBLE_DEVICES
+        -v /data/miles_ci:/data/miles_ci
+        -v /data/miles_ci/models:/root/models
+        -v /data/miles_ci/datasets:/root/datasets
+        -v /data/miles_ci/hf_cache:/root/.cache/huggingface
+        -v /tmp/miles-ray:/tmp/ray
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}
+    env:
+      PYTHONPATH: ${{ github.workspace }}
+      HF_HOME: /root/.cache/huggingface
+      GITHUB_COMMIT_NAME: ${{ github.sha }}
+      WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Ensure Ray temp dir exists on host
+        shell: bash
+        run: mkdir -p /tmp/miles-ray
+
+      - name: Wait for ROCm GPUs
+        shell: bash
+        run: |
+          for i in $(seq 1 60); do
+            if rocm-smi --showid >/dev/null 2>&1; then
+              echo "ROCm ready after $((i-1)) retry(s)"
+              rocm-smi --showproductname 2>/dev/null | head || true
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "ERROR: rocm-smi did not become ready after 120s" >&2
+          exit 1
+
+      - name: Install miles (SGLang + Megatron are baked into the image)
+        shell: bash
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          pip install -e . --no-deps --break-system-packages
+          pip install polars --break-system-packages || true
+          pip install nvidia-modelopt --break-system-packages || true
+
+      - name: Apply SGLang meta_info patch
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os, sys
+          sglang = os.environ.get("SGLANG_DIR", "/sgl-workspace/sglang/python/sglang")
+          path = os.path.join(sglang, "srt/entrypoints/openai/serving_chat.py")
+          old = 'ret_item["meta_info"] if request.return_meta_info else None'
+          new = 'ret_item["meta_info"] if (request.return_meta_info or request.logprobs) else None'
+          name = os.path.basename(path)
+          if not os.path.exists(path):
+              print(f"SKIP {name}: not found at {path}"); sys.exit(0)
+          src = open(path).read()
+          if new in src:
+              print(f"OK   {name}: already patched"); sys.exit(0)
+          count = src.count(old)
+          if count != 1:
+              print(f"WARN {name}: expected 1 occurrence, found {count}; not patching"); sys.exit(1)
+          open(path, "w").write(src.replace(old, new))
+          print(f"PATCHED {name}")
+          PY
+
+      - name: Apply Megatron-LM#74 ROCm checkpoint patch
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os, sys
+          path = "/root/Megatron-LM/megatron/core/dist_checkpointing/strategies/filesystem_async.py"
+          old = "        result = []\n\n        for bucket in write_buckets:"
+          new = (
+              "        if non_blocking and getattr(torch.version, \"hip\", None):\n"
+              "            # Pinned memory + fork = segfault on ROCm. Force pageable staging.\n"
+              "            non_blocking = False\n"
+              "        result = []\n\n        for bucket in write_buckets:"
+          )
+          if not os.path.exists(path):
+              print(f"SKIP: {path} not found"); sys.exit(0)
+          src = open(path).read()
+          if "getattr(torch.version, \"hip\", None)" in src:
+              print("OK: already patched"); sys.exit(0)
+          if old not in src:
+              print("WARN: target not found"); sys.exit(1)
+          open(path, "w").write(src.replace(old, new, 1))
+          print("PATCHED filesystem_async.py")
+          PY
+
+      - name: Run ${{ matrix.test }}
+        shell: bash
+        run: |
+          echo "=== running ${{ matrix.test }} ==="
+          PYTHONPATH="$GITHUB_WORKSPACE" python3 "${{ matrix.test }}"
