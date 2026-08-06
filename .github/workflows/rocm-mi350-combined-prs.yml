@@ -18,16 +18,16 @@ jobs:
       max-parallel: 1
       matrix:
         test:
-          - tests/e2e/ckpt/test_qwen3_4B_ckpt.py
-          - tests/e2e/long/test_qwen2.5_0.5B_gsm8k_async.py
-          - tests/e2e/megatron/test_mimo_7B_mtp_only_grad.py
-          - tests/e2e/megatron/test_glm47_flash/test_r3_mtp.py
-          - tests/e2e/sglang/test_session_server_multi_role/test_glm47.py
-          - tests/e2e/sglang_config/test_sglang_config_mixed_offload_ft.py
-          - tests/e2e/sglang_config/test_sglang_config_mixed_offload.py
-          - tests/e2e/sglang_config/test_sglang_config.py
-          - tests/e2e/short/test_qwen2.5_0.5B_gsm8k_short.py
-          - tests/e2e/short/test_qwen2.5_0.5B_gsm8k_async_short.py
+          - tests/e2e/sglang_config/test_sglang_config.py                    # est_time=400
+          - tests/e2e/sglang_config/test_sglang_config_mixed_offload.py       # est_time=400
+          - tests/e2e/short/test_qwen2.5_0.5B_gsm8k_short.py                 # est_time=400
+          - tests/e2e/short/test_qwen2.5_0.5B_gsm8k_async_short.py           # est_time=400
+          - tests/e2e/megatron/test_mimo_7B_mtp_only_grad.py                  # est_time=400
+          - tests/e2e/sglang/test_session_server_multi_role/test_glm47.py     # est_time=500
+          - tests/e2e/sglang_config/test_sglang_config_mixed_offload_ft.py    # est_time=500
+          - tests/e2e/megatron/test_glm47_flash/test_r3_mtp.py                # est_time=1100
+          - tests/e2e/ckpt/test_qwen3_4B_ckpt.py                              # est_time=1400
+          - tests/e2e/long/test_qwen2.5_0.5B_gsm8k_async.py                  # est_time=5400
     container:
       image: rocm/sgl-dev:miles-rocm720-mi35x-20260805
       options: >-
