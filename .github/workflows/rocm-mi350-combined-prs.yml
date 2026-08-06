@@ -73,6 +73,8 @@ jobs:
       - name: Wait for ROCm GPUs
         shell: bash
         run: |
+          echo "Waiting 30s for previous container to release GPU devices..."
+          sleep 30
           for i in $(seq 1 60); do
             if rocm-smi --showid >/dev/null 2>&1; then
               echo "ROCm ready after $((i-1)) retry(s)"
@@ -81,7 +83,7 @@ jobs:
             fi
             sleep 2
           done
-          echo "ERROR: rocm-smi did not become ready after 120s" >&2
+          echo "ERROR: rocm-smi did not become ready after 150s" >&2
           exit 1
 
       - name: Install miles (SGLang + Megatron are baked into the image)
