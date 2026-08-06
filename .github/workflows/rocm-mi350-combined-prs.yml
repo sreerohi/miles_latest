@@ -43,6 +43,7 @@ jobs:
         -v /data/miles_ci/datasets:/root/datasets
         -v /data/miles_ci/hf_cache:/root/.cache/huggingface
         -v /tmp/miles-ray:/tmp/ray
+        -v /tmp/aiter_configs:/tmp/aiter_configs
     defaults:
       run:
         working-directory: ${{ github.workspace }}
