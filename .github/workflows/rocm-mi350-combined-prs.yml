@@ -53,6 +53,7 @@ jobs:
       HF_HOME: /root/.cache/huggingface
       GITHUB_COMMIT_NAME: ${{ github.sha }}
       WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+      SGLANG_USE_AITER: "0"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -62,6 +63,13 @@ jobs:
         run: |
           echo "hostname    : $(hostname)"
           echo "runner name : ${{ runner.name }}"
+
+      - name: Clear stale aiter JIT locks inside container
+        shell: bash
+        run: |
+          find /tmp/aiter_configs /sgl-workspace/aiter/aiter/jit/build \
+            -name "*.lock" -delete 2>/dev/null || true
+          echo "Cleared stale aiter JIT locks"
 
       - name: Ensure host cache dirs exist and clear stale locks and Ray sessions
         shell: bash
