@@ -44,6 +44,7 @@ jobs:
         -v /data/miles_ci/hf_cache:/root/.cache/huggingface
         -v /tmp/miles-ray:/tmp/ray
         -v /tmp/aiter_configs:/tmp/aiter_configs
+        -v /tmp/aiter_jit_build:/sgl-workspace/aiter/aiter/jit/build
     defaults:
       run:
         working-directory: ${{ github.workspace }}
@@ -56,9 +57,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Ensure Ray temp dir exists on host
+      - name: Ensure host cache dirs exist and clear stale aiter JIT locks
         shell: bash
-        run: mkdir -p /tmp/miles-ray
+        run: |
+          mkdir -p /tmp/miles-ray /tmp/aiter_configs /tmp/aiter_jit_build
+          find /tmp/aiter_configs /tmp/aiter_jit_build \
+            -name "*.lock" -delete 2>/dev/null || true
 
       - name: Wait for ROCm GPUs
         shell: bash
