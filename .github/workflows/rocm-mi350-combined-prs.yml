@@ -29,7 +29,7 @@ jobs:
           - tests/e2e/ckpt/test_qwen3_4B_ckpt.py                              # est_time=1400
           - tests/e2e/long/test_qwen2.5_0.5B_gsm8k_async.py                  # est_time=5400
     container:
-      image: rocm/sgl-dev:miles-rocm720-mi35x-20260806
+      image: rocm/sgl-dev:miles-rocm720-mi35x-20260809
       options: >-
         --device /dev/kfd --device /dev/dri
         --group-add 44 --group-add 109
